@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { LayoutDashboard, Package, ShoppingBag, Image as ImageIcon, LogOut, Menu } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { useState } from "react";
+import { clearSupabaseSession } from "@/lib/supabase-client";
 
 const nav = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -37,8 +38,11 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         })}
       </nav>
       <button
-        className="mt-6 flex w-full items-center gap-3 px-3 py-2 text-sm hover:bg-zinc-100"
-        onClick={() => signOut({ callbackUrl: "/admin/login" })}
+        className="mt-6 flex w-full items-center justify-center gap-2 rounded-full border border-black px-4 py-2 text-xs uppercase tracking-[0.14em] hover:bg-zinc-100"
+        onClick={async () => {
+          await clearSupabaseSession();
+          await signOut({ callbackUrl: "/admin/login" });
+        }}
       >
         <LogOut size={16} />
         Logout

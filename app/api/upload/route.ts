@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
-import path from "path";
-import { promises as fs } from "fs";
 import { requireAdminSession } from "@/lib/admin-api";
-import { sanitizeText } from "@/lib/sanitize";
+import { getSupabaseClients } from "@/lib/supabase";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 const MAX_SIZE = 5 * 1024 * 1024;
@@ -10,11 +8,14 @@ const MAX_SIZE = 5 * 1024 * 1024;
 export async function POST(request: Request) {
   const unauthorized = await requireAdminSession();
   if (unauthorized) return unauthorized;
+  const clients = getSupabaseClients();
+  if (!clients) return NextResponse.json({ error: "Supabase env is not configured" }, { status: 500 });
 
   const form = await request.formData();
   const file = form.get("file");
-  const folder = sanitizeText(String(form.get("folder") ?? ""));
-  const filePrefix = sanitizeText(String(form.get("filePrefix") ?? ""));
+  const filePrefix = String(form.get("filePrefix") ?? "")
+    .replace(/[^\w-]/g, "")
+    .slice(0, 64);
   if (!(file instanceof File)) {
     return NextResponse.json({ error: "File is required" }, { status: 400 });
   }
@@ -26,21 +27,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "File too large" }, { status: 400 });
   }
 
-  const bytes = Buffer.from(await file.arrayBuffer());
-  const extension = file.type.split("/")[1];
   const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, "-").toLowerCase();
-  const originalBaseName = sanitizedName.replace(/\.[^.]*$/, "").replace(/[.-]{2,}/g, "-").slice(0, 64);
-  const sanitizedPrefix = filePrefix ? filePrefix.replace(/[^\w-]/g, "").slice(0, 64) : "";
-  const baseName = sanitizedPrefix
-    ? `${sanitizedPrefix}-${originalBaseName}-${Date.now()}`
-    : `${originalBaseName || "upload"}-${Date.now()}`;
+  const fileName = `${Date.now()}-${filePrefix ? `${filePrefix}-` : ""}${sanitizedName}`;
 
-  const targetFolder = folder === "products" ? "uploads/products" : "uploads";
-  const fileName = `${baseName}.${extension}`;
-  const uploadDir = path.join(process.cwd(), "public", targetFolder);
-  await fs.mkdir(uploadDir, { recursive: true });
-  const uploadPath = path.join(uploadDir, fileName);
-  await fs.writeFile(uploadPath, bytes);
+  const { error } = await clients.supabaseAdmin.storage
+    .from("products")
+    .upload(fileName, file, { contentType: file.type, upsert: false });
 
-  return NextResponse.json({ url: `/${targetFolder}/${fileName}` });
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  const {
+    data: { publicUrl },
+  } = clients.supabaseAdmin.storage.from("products").getPublicUrl(fileName);
+
+  return NextResponse.json({ url: publicUrl });
 }

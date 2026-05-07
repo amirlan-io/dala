@@ -7,6 +7,20 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 3. Run `npm install`
 4. Run `npm run dev`
 
+### Supabase Setup
+
+1. Create tables from `supabase/schema.sql` in your Supabase SQL editor.
+2. Create a public storage bucket named `products`.
+3. Add Supabase env vars to `.env.local`:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+4. Seed initial products once:
+
+```bash
+npm run seed:supabase
+```
+
 ## Getting Started
 
 First, run the development server:

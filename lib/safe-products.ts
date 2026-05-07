@@ -38,7 +38,7 @@ export function normalizeProducts(payload: unknown): Product[] {
       images: imageList.length ? imageList : ["/placeholder-product.svg"],
       fittingImage: typeof record.fittingImage === "string" ? record.fittingImage : undefined,
       featured: Boolean(record.featured),
-      new: Boolean(record.new),
+      new: Boolean(record.is_new ?? record.new),
     };
   });
 }

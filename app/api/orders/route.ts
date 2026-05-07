@@ -1,53 +1,66 @@
 import { NextResponse } from "next/server";
-import { readJsonFile, writeJsonFile } from "@/lib/json-store";
 import { requireAdminSession } from "@/lib/admin-api";
 import { sanitizePayload } from "@/lib/sanitize";
-
-const ORDERS_PATH = "data/orders.json";
-type OrderRecord = { id: string; [key: string]: unknown };
+import { getSupabaseClients } from "@/lib/supabase";
 
 export async function GET() {
   const unauthorized = await requireAdminSession();
   if (unauthorized) return unauthorized;
+  const clients = getSupabaseClients();
+  if (!clients) return NextResponse.json([], { status: 200 });
 
-  const orders = await readJsonFile<OrderRecord[]>(ORDERS_PATH, []);
-  return NextResponse.json(orders);
+  const { data, error } = await clients.supabaseAdmin
+    .from("orders")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json(data ?? []);
 }
 
 export async function POST(request: Request) {
-  const unauthorized = await requireAdminSession();
-  if (unauthorized) return unauthorized;
+  const clients = getSupabaseClients();
+  if (!clients) return NextResponse.json({ error: "Supabase env is not configured" }, { status: 500 });
 
-  const payload = sanitizePayload(await request.json());
-  const orders = await readJsonFile<OrderRecord[]>(ORDERS_PATH, []);
-  const nextOrder = { id: crypto.randomUUID(), ...payload };
-  await writeJsonFile(ORDERS_PATH, [nextOrder, ...orders]);
-  return NextResponse.json(nextOrder, { status: 201 });
+  const payload = sanitizePayload(await request.json()) as Record<string, unknown>;
+  const { data, error } = await clients.supabaseAdmin
+    .from("orders")
+    .insert(payload)
+    .select("*")
+    .single();
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json(data, { status: 201 });
 }
 
 export async function PUT(request: Request) {
   const unauthorized = await requireAdminSession();
   if (unauthorized) return unauthorized;
+  const clients = getSupabaseClients();
+  if (!clients) return NextResponse.json({ error: "Supabase env is not configured" }, { status: 500 });
 
-  const payload = sanitizePayload(await request.json());
-  const orders = await readJsonFile<OrderRecord[]>(ORDERS_PATH, []);
-  const updated = orders.map((order) =>
-    order.id === payload.id ? { ...order, ...payload } : order,
-  );
-  await writeJsonFile(ORDERS_PATH, updated);
-  return NextResponse.json({ ok: true });
+  const payload = sanitizePayload(await request.json()) as Record<string, unknown>;
+  const id = String(payload.id ?? "");
+  if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+
+  const { id: _, ...updatePayload } = payload;
+  const { data, error } = await clients.supabaseAdmin.from("orders").update(updatePayload).eq("id", id).select("*").single();
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json(data);
 }
 
 export async function DELETE(request: Request) {
   const unauthorized = await requireAdminSession();
   if (unauthorized) return unauthorized;
+  const clients = getSupabaseClients();
+  if (!clients) return NextResponse.json({ error: "Supabase env is not configured" }, { status: 500 });
 
   const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
-  const orders = await readJsonFile<OrderRecord[]>(ORDERS_PATH, []);
-  const updated = orders.filter((item) => item.id !== id);
-  await writeJsonFile(ORDERS_PATH, updated);
+  const { error } = await clients.supabaseAdmin.from("orders").delete().eq("id", id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }

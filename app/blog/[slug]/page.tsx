@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { BLOG_POSTS } from "@/lib/data";
+import { BLOG_POSTS } from "@/lib/blog-data";
 import { useLanguage } from "@/lib/i18n";
 
 export default function BlogDetailPage() {

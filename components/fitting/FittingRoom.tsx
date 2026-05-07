@@ -81,7 +81,8 @@ export function FittingRoom({ title = "Примерка", products, initialSelec
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.97 }}
                 transition={{ duration: 0.28, ease: "easeOut" }}
-                className="absolute inset-0"
+                className="absolute inset-0 pointer-events-none"
+                style={{ zIndex: 10 }}
               >
                 <Image src={item.fittingImage!} alt={item.name} fill className="object-contain p-3" />
               </motion.div>

@@ -6,6 +6,7 @@ import { Search, ShoppingBag } from "lucide-react";
 import { useEffect, useState } from "react";
 import { signOut } from "next-auth/react";
 import { useCartStore } from "@/lib/cart-store";
+import { clearSupabaseSession } from "@/lib/supabase-client";
 
 export function Navbar() {
   const count = useCartStore((s) => s.items.reduce((sum, i) => sum + i.quantity, 0));
@@ -35,17 +36,20 @@ export function Navbar() {
             DALA
           </Link>
           <nav className="hidden items-center gap-8 text-[12px] uppercase tracking-[0.15em] md:flex">
-            <Link href="/" className="transition-opacity hover:opacity-70">Главная</Link>
-            <Link href="/catalog" className="transition-opacity hover:opacity-70">Каталог</Link>
-            <Link href="/about" className="transition-opacity hover:opacity-70">О бренде</Link>
-            <Link href="/contact" className="transition-opacity hover:opacity-70">Контакты</Link>
+            <Link href="/" className="border-b border-gray-100 pb-1 transition-opacity hover:opacity-70">Главная</Link>
+            <Link href="/catalog" className="border-b border-gray-100 pb-1 transition-opacity hover:opacity-70">Каталог</Link>
+            <Link href="/about" className="border-b border-gray-100 pb-1 transition-opacity hover:opacity-70">О бренде</Link>
+            <Link href="/contact" className="border-b border-gray-100 pb-1 transition-opacity hover:opacity-70">Контакты</Link>
           </nav>
           <div className="flex items-center gap-4 text-sm uppercase tracking-[0.1em]">
             {isAdmin ? (
               <button
                 type="button"
-                onClick={() => signOut({ callbackUrl: "/catalog" })}
-                className="text-[11px] tracking-[0.14em] text-[var(--color-on-surface-2)] transition hover:text-black"
+                onClick={async () => {
+                  await clearSupabaseSession();
+                  await signOut({ callbackUrl: "/catalog" });
+                }}
+                className="rounded-full border border-black px-4 py-1.5 text-[10px] uppercase tracking-[0.16em] text-[var(--color-on-surface-2)] transition hover:text-black"
               >
                 Выйти
               </button>

@@ -57,6 +57,7 @@ export function HeroSlideshow({ posterImage = "/hero/slide-1.jpg" }: { posterIma
           src={currentImage}
           alt="DALA hero"
           className="absolute inset-0 h-full w-full object-cover object-center md:hidden"
+          style={{ objectFit: "cover", backgroundSize: "cover" }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

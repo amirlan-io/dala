@@ -5,9 +5,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { X } from "lucide-react";
 import { useCartStore } from "@/lib/cart-store";
+import { useState } from "react";
 
 export default function CartPage() {
   const { items, removeItem, updateQty } = useCartStore();
+  const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const whatsapp = process.env.NEXT_PUBLIC_WHATSAPP ?? "+77XXXXXXXXX";
   const cleanPhone = whatsapp.replace(/[^\d]/g, "");
@@ -16,8 +18,33 @@ export default function CartPage() {
     (item) => `- ${item.name}, размер ${item.size} — ${(item.price * item.quantity).toLocaleString("ru-RU")} ₸`,
   );
   const orderMessage = `Здравствуйте! Хочу оформить заказ:\n${orderLines.join("\n")}\nИтого: ${total.toLocaleString("ru-RU")} ₸\nПрошу связаться со мной.`;
-  const orderHref = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(orderMessage)}`;
   const managerHref = `https://wa.me/${cleanPhone}?text=${encodeURIComponent("Здравствуйте! Прошу связаться со мной по заказу.")}`;
+
+  const handleWhatsAppOrder = async () => {
+    if (isSubmittingOrder || items.length === 0) return;
+    setIsSubmittingOrder(true);
+
+    const payload = {
+      customer_name: "Website customer",
+      customer_phone: cleanPhone,
+      items,
+      total_price: total,
+      message: orderMessage,
+    };
+
+    try {
+      await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+    } catch {
+      // Keep checkout flow alive even if DB save fails.
+    } finally {
+      window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(orderMessage)}`, "_blank", "noopener,noreferrer");
+      setIsSubmittingOrder(false);
+    }
+  };
 
   return (
     <section className="bg-[#FFF8F1]">
@@ -92,14 +119,14 @@ export default function CartPage() {
               </div>
 
               <input placeholder="Промокод" className="mt-6 w-full border-b border-black bg-transparent py-2 text-sm outline-none" />
-              <a
-                href={orderHref}
-                target="_blank"
-                rel="noreferrer"
+              <button
+                type="button"
+                onClick={handleWhatsAppOrder}
+                disabled={isSubmittingOrder}
                 className="mt-6 block w-full bg-black px-5 py-4 text-center text-sm uppercase tracking-[0.1em] text-white"
               >
-                ОФОРМИТЬ ЧЕРЕЗ WHATSAPP
-              </a>
+                {isSubmittingOrder ? "СОХРАНЯЕМ ЗАКАЗ..." : "ОФОРМИТЬ ЧЕРЕЗ WHATSAPP"}
+              </button>
               <a
                 href={managerHref}
                 target="_blank"

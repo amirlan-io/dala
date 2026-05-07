@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BLOG_POSTS } from "@/lib/data";
+import { BLOG_POSTS } from "@/lib/blog-data";
 import { useLanguage } from "@/lib/i18n";
 
 export function BlogPageContent() {

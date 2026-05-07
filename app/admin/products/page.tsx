@@ -16,7 +16,7 @@ type Product = {
   sizes: string[];
   images: string[];
   fittingImage?: string;
-  visible: boolean;
+  is_new: boolean;
   new: boolean;
 };
 
@@ -29,7 +29,7 @@ const emptyForm = {
   sizes: ["M"],
   images: [] as string[],
   fittingImage: "",
-  visible: true,
+  is_new: false,
   new: false,
 };
 
@@ -54,10 +54,11 @@ export default function AdminProductsPage() {
 
   const saveProduct = async () => {
     const method = isEditing ? "PUT" : "POST";
-    const response = await fetch("/api/products", {
+    const endpoint = isEditing ? `/api/products/${editingId}` : "/api/products";
+    const response = await fetch(endpoint, {
       method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(isEditing ? { ...form, id: editingId } : form),
+      body: JSON.stringify(form),
     });
     if (!response.ok) {
       setMessage({ type: "error", text: "Error: product was not saved." });
@@ -70,7 +71,7 @@ export default function AdminProductsPage() {
   };
 
   const removeProduct = async (id: string) => {
-    const response = await fetch(`/api/products?id=${id}`, { method: "DELETE" });
+    const response = await fetch(`/api/products/${id}`, { method: "DELETE" });
     if (!response.ok) {
       setMessage({ type: "error", text: "Error: product was not deleted." });
       return;
@@ -126,7 +127,7 @@ export default function AdminProductsPage() {
                   sizes: product.sizes,
                   images: product.images,
                   fittingImage: product.fittingImage ?? "",
-                  visible: Boolean(product.visible),
+                  is_new: Boolean(product.is_new ?? product.new),
                   new: Boolean(product.new),
                 });
               }}
@@ -137,7 +138,7 @@ export default function AdminProductsPage() {
               <span className="font-medium">{product.name}</span>
               <span className="text-xs text-zinc-600 md:text-sm md:text-black">{product.category}</span>
               <span className="text-xs md:text-sm">{product.price.toLocaleString("ru-RU")} ₸</span>
-              <span className="text-xs md:text-sm">{product.visible ? "Active" : "Hidden"} {product.new ? "• New" : ""}</span>
+              <span className="text-xs md:text-sm">{product.is_new || product.new ? "New" : "Standard"}</span>
             </button>
           ))}
         </div>
@@ -265,16 +266,10 @@ export default function AdminProductsPage() {
           <label className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"
-              checked={form.visible}
-              onChange={(e) => setForm((prev) => ({ ...prev, visible: e.target.checked }))}
-            />
-            Show on site
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={form.new}
-              onChange={(e) => setForm((prev) => ({ ...prev, new: e.target.checked }))}
+              checked={form.is_new}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, is_new: e.target.checked, new: e.target.checked }))
+              }
             />
             New Collection Badge
           </label>

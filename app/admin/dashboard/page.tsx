@@ -1,12 +1,19 @@
-import { readJsonFile } from "@/lib/json-store";
+import { getSupabaseClients } from "@/lib/supabase";
 
 export default async function AdminDashboardPage() {
-  const products = await readJsonFile<unknown[]>("data/products.json", []);
-  const orders = await readJsonFile<{ id: string; date: string; customerName: string; phone: string; total: number; status: string }[]>(
-    "data/orders.json",
-    [],
-  );
-  const hero = await readJsonFile<{ visible: boolean }>("data/hero.json", { visible: false });
+  const clients = getSupabaseClients();
+  const [productsResponse, ordersResponse] = clients
+    ? await Promise.all([
+        clients.supabaseAdmin.from("products").select("id, is_new"),
+        clients.supabaseAdmin
+          .from("orders")
+          .select("id, created_at, customer_name, customer_phone, total_price")
+          .order("created_at", { ascending: false }),
+      ])
+    : [{ data: [] }, { data: [] }];
+
+  const products = productsResponse.data ?? [];
+  const orders = ordersResponse.data ?? [];
   const recent = orders.slice(0, 5);
 
   return (
@@ -15,8 +22,8 @@ export default async function AdminDashboardPage() {
       <div className="mt-8 grid gap-4 md:grid-cols-3">
         {[
           ["Total Products", String(products.length)],
-          ["New Orders", String(orders.filter((order) => order.status === "new").length)],
-          ["Hero Status", hero.visible ? "Active" : "Inactive"],
+          ["Total Orders", String(orders.length)],
+          ["New Products", String(products.filter((product) => product.is_new).length)],
         ].map(([label, value]) => (
           <article key={label} className="border p-5">
             <p className="text-xs uppercase tracking-[0.15em]">{label}</p>
@@ -35,11 +42,11 @@ export default async function AdminDashboardPage() {
         </div>
         {recent.map((order) => (
           <div key={order.id} className="grid grid-cols-5 px-4 py-3 text-sm border-b last:border-b-0">
-            <span>{new Date(order.date).toLocaleDateString("ru-RU")}</span>
-            <span>{order.customerName}</span>
-            <span>{order.phone}</span>
-            <span>{order.total.toLocaleString("ru-RU")} ₸</span>
-            <span>{order.status}</span>
+            <span>{new Date(order.created_at).toLocaleDateString("ru-RU")}</span>
+            <span>{order.customer_name}</span>
+            <span>{order.customer_phone}</span>
+            <span>{order.total_price.toLocaleString("ru-RU")} ₸</span>
+            <span>—</span>
           </div>
         ))}
       </div>

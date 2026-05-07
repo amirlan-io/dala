@@ -28,7 +28,7 @@ function ProductCardCatalog({
   const addItem = useCartStore((state) => state.addItem);
   const [imageError, setImageError] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [selectedSize, setSelectedSize] = useState(product.sizes[0] ?? "M");
+  const [selectedSize] = useState(product.sizes[0] ?? "M");
 
   return (
     <motion.article
@@ -131,6 +131,8 @@ function ProductCardCatalog({
 export function CatalogPageContent({ initialIsAdmin = false }: { initialIsAdmin?: boolean }) {
   const { t } = useLanguage();
   const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<CategoryValue>("ALL");
   const [sort, setSort] = useState<SortValue>("NEW");
@@ -147,10 +149,18 @@ export function CatalogPageContent({ initialIsAdmin = false }: { initialIsAdmin?
   const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
+    setIsLoading(true);
     fetch("/api/products")
       .then((res) => res.json())
-      .then((data) => setProducts(normalizeProducts(data)))
-      .catch(() => setProducts([]));
+      .then((data) => {
+        setProducts(normalizeProducts(data));
+        setLoadError(null);
+      })
+      .catch(() => {
+        setProducts([]);
+        setLoadError("Не удалось загрузить каталог.");
+      })
+      .finally(() => setIsLoading(false));
   }, []);
 
   useEffect(() => {
@@ -210,7 +220,7 @@ export function CatalogPageContent({ initialIsAdmin = false }: { initialIsAdmin?
   };
 
   const deleteProduct = async (id: string) => {
-    const response = await fetch(`/api/products?id=${id}`, { method: "DELETE" });
+    const response = await fetch(`/api/products/${id}`, { method: "DELETE" });
     if (!response.ok) return;
     const updated = await fetch("/api/products").then((res) => res.json());
     setProducts(normalizeProducts(updated));
@@ -313,7 +323,40 @@ export function CatalogPageContent({ initialIsAdmin = false }: { initialIsAdmin?
         </div>
 
         <AnimatePresence mode="wait">
-          {filteredProducts.length === 0 ? (
+          {isLoading ? (
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4"
+            >
+              {Array.from({ length: 8 }).map((_, index) => (
+                <div key={`skeleton-${index}`} className="animate-pulse">
+                  <div className="aspect-[3/4] bg-zinc-200" />
+                  <div className="mt-3 h-4 w-2/3 bg-zinc-200" />
+                  <div className="mt-2 h-3 w-full bg-zinc-200" />
+                  <div className="mt-2 h-4 w-1/3 bg-zinc-200" />
+                </div>
+              ))}
+            </motion.div>
+          ) : loadError ? (
+            <motion.div
+              key="error"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="py-24 text-center"
+            >
+              <p className="font-serif text-3xl">Ошибка загрузки</p>
+              <p className="mt-3 text-sm text-[var(--color-on-surface-2)]">{loadError}</p>
+              <button onClick={() => window.location.reload()} className="mt-4 text-sm underline underline-offset-4">
+                Обновить страницу
+              </button>
+            </motion.div>
+          ) : filteredProducts.length === 0 ? (
             <motion.div
               key="empty"
               initial={{ opacity: 0 }}
@@ -387,11 +430,11 @@ export function CatalogPageContent({ initialIsAdmin = false }: { initialIsAdmin?
 
                 setIsSaving(true);
                 setCreateMessage(null);
-                const response = await fetch("/api/products", {
+                const endpoint = editingId ? `/api/products/${editingId}` : "/api/products";
+                const response = await fetch(endpoint, {
                   method: editingId ? "PUT" : "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({
-                    ...(editingId ? { id: editingId } : {}),
                     name: createForm.name.trim(),
                     description: createForm.description.trim(),
                     price: Number(createForm.price),
@@ -399,7 +442,7 @@ export function CatalogPageContent({ initialIsAdmin = false }: { initialIsAdmin?
                     category: "KAMZOL",
                     material: "Premium textile",
                     sizes: ["M"],
-                    visible: true,
+                    is_new: true,
                     new: true,
                     featured: false,
                   }),

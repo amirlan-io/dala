@@ -3,19 +3,17 @@
 import { useEffect, useState } from "react";
 
 type HeroSettings = {
+  id: string;
   title: string;
   subtitle: string;
-  ctaText: string;
-  image: string;
-  visible: boolean;
+  image_url: string;
 };
 
 const emptyHero: HeroSettings = {
+  id: "default",
   title: "",
   subtitle: "",
-  ctaText: "",
-  image: "",
-  visible: true,
+  image_url: "",
 };
 
 export default function AdminHeroPage() {
@@ -37,7 +35,7 @@ export default function AdminHeroPage() {
     body.append("file", file);
     const response = await fetch("/api/upload", { method: "POST", body });
     const data = await response.json();
-    if (data.url) setHero((prev) => ({ ...prev, image: data.url }));
+    if (data.url) setHero((prev) => ({ ...prev, image_url: data.url }));
   };
 
   const save = async () => {
@@ -66,12 +64,6 @@ export default function AdminHeroPage() {
           onChange={(e) => setHero((prev) => ({ ...prev, subtitle: e.target.value }))}
         />
         <input
-          className="w-full border px-3 py-2"
-          placeholder="CTA Button Text"
-          value={hero.ctaText}
-          onChange={(e) => setHero((prev) => ({ ...prev, ctaText: e.target.value }))}
-        />
-        <input
           type="file"
           accept="image/jpeg,image/png,image/webp"
           onChange={(e) => {
@@ -79,16 +71,7 @@ export default function AdminHeroPage() {
             if (file) uploadImage(file);
           }}
         />
-        {hero.image ? <img src={hero.image} alt="Hero preview" className="h-40 w-full object-cover" /> : null}
-
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={hero.visible}
-            onChange={(e) => setHero((prev) => ({ ...prev, visible: e.target.checked }))}
-          />
-          Show Hero
-        </label>
+        {hero.image_url ? <img src={hero.image_url} alt="Hero preview" className="h-40 w-full object-cover" /> : null}
 
         <button className="bg-black px-5 py-3 text-sm uppercase tracking-[0.1em] text-white" onClick={save}>
           Save Hero

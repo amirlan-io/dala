@@ -9,14 +9,6 @@ import { StoryBlock } from "@/components/home/StoryBlock";
 import { FeaturedCatalog } from "@/components/home/FeaturedCatalog";
 import { normalizeProducts } from "@/lib/safe-products";
 
-type HeroContent = {
-  title: string;
-  subtitle: string;
-  ctaText: string;
-  image: string;
-  visible: boolean;
-};
-
 const MOCK_PRODUCTS: Product[] = [
   {
     id: "mock-1",
@@ -80,7 +72,6 @@ export function HomePageContent({
   organizationSchemaJson,
 }: {
   organizationSchemaJson: string;
-  heroContent: HeroContent;
 }) {
   const [products, setProducts] = useState<Product[]>([]);
 

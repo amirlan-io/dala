@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { signOut } from "next-auth/react";
 import { useCartStore } from "@/lib/cart-store";
 import { Language, useLanguage } from "@/lib/i18n";
+import { clearSupabaseSession } from "@/lib/supabase-client";
 
 export function MobileBottomNav() {
   const pathname = usePathname();
@@ -112,7 +113,7 @@ export function MobileBottomNav() {
                       key={item.href}
                       href={item.href}
                       onClick={() => setMenuOpen(false)}
-                      className={`block border-b border-[#F5F5F5] py-4 transition-colors ${
+                      className={`block border-b border-gray-100 py-4 transition-colors ${
                         pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href))
                           ? "text-[#C9A96E]"
                           : "text-[#1E1B15]"
@@ -130,7 +131,7 @@ export function MobileBottomNav() {
                       <button
                         key={item.key}
                         onClick={() => setLanguage(item.key)}
-                        className={`border px-4 py-2 text-[11px] uppercase tracking-[0.18em] ${
+                        className={`border border-black/40 px-2.5 py-1 text-[10px] uppercase tracking-[0.16em] ${
                           language === item.key
                             ? "border-black bg-black text-white"
                             : "border-black/30 bg-transparent text-[#1E1B15]"
@@ -147,8 +148,11 @@ export function MobileBottomNav() {
                 {isAdmin ? (
                   <button
                     type="button"
-                    onClick={() => signOut({ callbackUrl: "/catalog" })}
-                    className="block w-full rounded-full border border-black/80 px-5 py-3 text-center text-sm uppercase tracking-[0.16em] text-[#1E1B15] transition hover:bg-black hover:text-white"
+                    onClick={async () => {
+                      await clearSupabaseSession();
+                      await signOut({ callbackUrl: "/catalog" });
+                    }}
+                    className="block w-full rounded-full border border-black px-5 py-3 text-center text-xs uppercase tracking-[0.16em] text-[#1E1B15] transition hover:bg-black hover:text-white"
                   >
                     {t("logoutAdmin")}
                   </button>

@@ -32,10 +32,28 @@ function hasValidHttpUrl(value: string | undefined) {
   }
 }
 
+/**
+ * Picks the first URL whose host is *.supabase.co.
+ * Important: if SUPABASE_URL is a stale typo (.supabase.com) but NEXT_PUBLIC_SUPABASE_URL is correct,
+ * the old code used the wrong variable first — uploads kept failing until both matched.
+ */
+function pickSupabaseProjectUrl(): string {
+  const candidates = [getProcessEnv("NEXT_PUBLIC_SUPABASE_URL"), getProcessEnv("SUPABASE_URL")];
+  for (const raw of candidates) {
+    const u = normalizeEnv(raw);
+    if (!u) continue;
+    try {
+      const host = new URL(u).hostname.toLowerCase();
+      if (host.endsWith(".supabase.co")) return u;
+    } catch {
+      continue;
+    }
+  }
+  return normalizeEnv(getProcessEnv("SUPABASE_URL") || getProcessEnv("NEXT_PUBLIC_SUPABASE_URL"));
+}
+
 function readSupabaseEnv() {
-  const publicUrl = normalizeEnv(
-    getProcessEnv("SUPABASE_URL") || getProcessEnv("NEXT_PUBLIC_SUPABASE_URL"),
-  );
+  const publicUrl = pickSupabaseProjectUrl();
   const anonKey = normalizeEnv(
     getProcessEnv("SUPABASE_ANON_KEY") || getProcessEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
   );

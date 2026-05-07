@@ -29,7 +29,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   if (slug) updatePayload.slug = slug;
   if (payload.name !== undefined) updatePayload.name = String(payload.name ?? "").trim();
   if (payload.description !== undefined) updatePayload.description = String(payload.description ?? "").trim();
-  if (payload.price !== undefined) updatePayload.price = Number(payload.price ?? 0);
+  if (payload.price !== undefined) updatePayload.price = Math.round(Number(payload.price ?? 0));
   if (payload.category !== undefined) updatePayload.category = String(payload.category ?? "ACCESSORIES");
   if (payload.images !== undefined) updatePayload.images = Array.isArray(payload.images) ? payload.images : [];
   if (payload.is_new !== undefined || payload.new !== undefined) {

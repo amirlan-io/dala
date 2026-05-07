@@ -458,13 +458,24 @@ export function CatalogPageContent({ initialIsAdmin = false }: { initialIsAdmin?
                 });
 
                 if (!response.ok) {
-                  const errorPayload = await response.json().catch(() => null);
-                  const errorText = errorPayload?.error
-                    ? `Ошибка сохранения: ${String(errorPayload.error)}`
+                  const raw = await response.text();
+                  let parsed: { error?: string } | null = null;
+                  try {
+                    parsed = raw ? (JSON.parse(raw) as { error?: string }) : null;
+                  } catch {
+                    parsed = null;
+                  }
+                  const detail = parsed?.error
+                    ? String(parsed.error)
+                    : raw
+                      ? raw.slice(0, 280)
+                      : "";
+                  const errorText = detail
+                    ? `Ошибка сохранения${detail ? `: ${detail}` : ""} (HTTP ${response.status}).`
                     : `Ошибка сохранения (HTTP ${response.status}).`;
                   console.error("[Admin Quick Create] save failed:", {
                     status: response.status,
-                    errorPayload,
+                    body: raw?.slice(0, 500),
                   });
                   setCreateMessage({ type: "error", text: errorText });
                   setIsSaving(false);

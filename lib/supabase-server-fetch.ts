@@ -48,7 +48,9 @@ export function createResilientServerFetch(maxAttempts = 4) {
           e instanceof Error && "cause" in e
             ? String((e as Error & { cause?: unknown }).cause ?? "")
             : "";
-        console.error(`[supabase-fetch] attempt ${attempt}/${maxAttempts} failed:`, msg, cause);
+        if (attempt === maxAttempts) {
+          console.error(`[supabase-fetch] failed after ${maxAttempts} attempts:`, msg, cause);
+        }
         if (attempt < maxAttempts) await sleep(200 * attempt * attempt);
       } finally {
         if (timer) clearTimeout(timer);

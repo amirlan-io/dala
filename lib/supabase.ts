@@ -35,6 +35,14 @@ export function getSupabaseConfigIssue() {
     return "No Supabase URL in this deployment. In Vercel → Project that owns this domain → Settings → Environment Variables add SUPABASE_URL (or NEXT_PUBLIC_SUPABASE_URL) = https://…supabase.co for Production, Save, then Redeploy (Deployments → … → Redeploy).";
   }
   if (!hasValidHttpUrl(publicUrl)) return "Invalid Supabase URL format (must be https://…supabase.co)";
+  try {
+    const host = new URL(publicUrl).hostname.toLowerCase();
+    if (host.endsWith(".supabase.com") || !host.endsWith(".supabase.co")) {
+      return "Supabase URL must be https://xxxx.supabase.co (not .supabase.com — common copy mistake). Copy Project URL from Supabase → Settings → API.";
+    }
+  } catch {
+    return "Invalid Supabase URL format (must be https://…supabase.co)";
+  }
   if (!anonKey) return "Missing NEXT_PUBLIC_SUPABASE_ANON_KEY (or SUPABASE_ANON_KEY)";
   if (!serviceRoleKey) return "Missing SUPABASE_SERVICE_ROLE_KEY";
   const hasNonAsciiKeyChars = [anonKey, serviceRoleKey].some((key) => /[^\x20-\x7E]/.test(key));

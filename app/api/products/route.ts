@@ -3,6 +3,9 @@ import { requireAdminSession } from "@/lib/admin-api";
 import { sanitizePayload } from "@/lib/sanitize";
 import { getSupabaseClients, getSupabaseConfigIssue } from "@/lib/supabase";
 
+/** Supabase stack uses `node:dns` — Edge runtime would crash and return HTML __next_error__ instead of JSON. */
+export const runtime = "nodejs";
+
 function toSlug(value: unknown) {
   const source = String(value ?? "")
     .trim()
@@ -87,6 +90,7 @@ export async function POST(request: Request) {
     return NextResponse.json(data, { status: 201 });
   } catch (error) {
     console.error("[api/products][POST] unhandled error:", error);
-    return NextResponse.json({ error: "Products create internal error" }, { status: 500 });
+    const message = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: message || "Products create internal error" }, { status: 500 });
   }
 }

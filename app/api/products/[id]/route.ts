@@ -3,6 +3,8 @@ import { requireAdminSession } from "@/lib/admin-api";
 import { sanitizePayload } from "@/lib/sanitize";
 import { getSupabaseClients } from "@/lib/supabase";
 
+export const runtime = "nodejs";
+
 function toSlug(value: unknown) {
   const source = String(value ?? "")
     .trim()

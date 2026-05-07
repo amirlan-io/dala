@@ -5,6 +5,8 @@ import { requireAdminSession } from "@/lib/admin-api";
 import { getSupabaseClients, getSupabaseConfigIssue, getSupabaseConnectionParams } from "@/lib/supabase";
 import { createResilientServerFetch } from "@/lib/supabase-server-fetch";
 
+export const runtime = "nodejs";
+
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 const MAX_SIZE = 5 * 1024 * 1024;
 const restFetch = createResilientServerFetch(3);

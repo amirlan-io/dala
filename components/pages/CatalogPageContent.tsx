@@ -465,11 +465,15 @@ export function CatalogPageContent({ initialIsAdmin = false }: { initialIsAdmin?
                   } catch {
                     parsed = null;
                   }
-                  const detail = parsed?.error
+                  const detailRaw = parsed?.error
                     ? String(parsed.error)
                     : raw
                       ? raw.slice(0, 280)
                       : "";
+                  const detail =
+                    detailRaw.includes("<!DOCTYPE") || detailRaw.includes("__next_error__")
+                      ? "внутренняя ошибка сервера (см. логи Vercel). Обнови деплой; API должен работать в Node runtime."
+                      : detailRaw;
                   const errorText = detail
                     ? `Ошибка сохранения${detail ? `: ${detail}` : ""} (HTTP ${response.status}).`
                     : `Ошибка сохранения (HTTP ${response.status}).`;

@@ -16,7 +16,12 @@ const withPWA = withPWAInit({
 
 const nextConfig: NextConfig = {
   images: {
-    remotePatterns: [],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "kdanyebrlkevzwxzssvw.supabase.co",
+      },
+    ],
   },
   async headers() {
     return [

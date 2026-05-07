@@ -19,7 +19,7 @@ export default function AdminLoginPage() {
           const result = await signIn("credentials", {
             email,
             password,
-            callbackUrl: "/",
+            callbackUrl: "/admin/dashboard",
             redirect: false,
           });
           if (result?.error) {
@@ -30,7 +30,7 @@ export default function AdminLoginPage() {
             );
             return;
           }
-          window.location.href = "/";
+          window.location.href = result?.url || "/admin/dashboard";
         }}
       >
         <input

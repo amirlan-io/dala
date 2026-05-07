@@ -23,7 +23,11 @@ export default function AdminLoginPage() {
             redirect: false,
           });
           if (result?.error) {
-            setError("Неверные данные");
+            setError(
+              result.error.includes("Too many")
+                ? "Слишком много попыток входа. Подождите 15 минут."
+                : "Неверные данные (проверьте ADMIN_EMAIL / ADMIN_PASSWORD_HASH в Vercel).",
+            );
             return;
           }
           window.location.href = "/";

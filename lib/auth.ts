@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { clearFailedAttempts, isRateLimited, registerFailedAttempt } from "@/lib/rate-limit";
 
 const TOO_MANY_ATTEMPTS_MESSAGE = "Too many login attempts. Please try again in 15 minutes.";
+const BCRYPT_HASH_PATTERN = /^\$2[aby]\$\d{2}\$.+/;
 
 function readHeaderValue(headers: unknown, key: string): string | undefined {
   if (!headers || typeof headers !== "object") return undefined;
@@ -49,8 +50,13 @@ export const authOptions: NextAuthOptions = {
         const passwordHash = String(process.env.ADMIN_PASSWORD_HASH ?? "").trim();
         let isValidPassword = false;
 
-        if (passwordHash) {
-          isValidPassword = await bcrypt.compare(password, passwordHash);
+        // Ignore placeholder/invalid hashes so plain password fallback can still work.
+        if (passwordHash && BCRYPT_HASH_PATTERN.test(passwordHash)) {
+          try {
+            isValidPassword = await bcrypt.compare(password, passwordHash);
+          } catch {
+            isValidPassword = false;
+          }
         } else {
           const fallbackPassword = String(process.env.ADMIN_PASSWORD ?? "").trim();
           isValidPassword = Boolean(fallbackPassword) && password === fallbackPassword;

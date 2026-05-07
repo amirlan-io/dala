@@ -3,6 +3,17 @@ import { createResilientServerFetch } from "@/lib/supabase-server-fetch";
 
 const resilientFetch = createResilientServerFetch();
 
+/**
+ * Next.js can embed `NEXT_PUBLIC_*` at **build** time. Reading via Reflect avoids a stale
+ * empty URL in API routes after you fix env in Vercel (until a no-cache redeploy).
+ * Prefer server-only `SUPABASE_URL` / `SUPABASE_ANON_KEY` on Vercel for API routes.
+ */
+function getProcessEnv(key: string): string | undefined {
+  if (typeof process === "undefined") return undefined;
+  const raw = Reflect.get(process.env as Record<string, unknown>, key);
+  return typeof raw === "string" ? raw : undefined;
+}
+
 function normalizeEnv(value: string | undefined) {
   if (!value) return "";
   return value
@@ -22,11 +33,33 @@ function hasValidHttpUrl(value: string | undefined) {
 }
 
 function readSupabaseEnv() {
-  // Prefer server-only names first so Vercel injects them at runtime (NEXT_PUBLIC_* is build-inlined on client).
-  const publicUrl = normalizeEnv(process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL);
-  const anonKey = normalizeEnv(process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-  const serviceRoleKey = normalizeEnv(process.env.SUPABASE_SERVICE_ROLE_KEY);
+  const publicUrl = normalizeEnv(
+    getProcessEnv("SUPABASE_URL") || getProcessEnv("NEXT_PUBLIC_SUPABASE_URL"),
+  );
+  const anonKey = normalizeEnv(
+    getProcessEnv("SUPABASE_ANON_KEY") || getProcessEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
+  );
+  const serviceRoleKey = normalizeEnv(getProcessEnv("SUPABASE_SERVICE_ROLE_KEY"));
   return { publicUrl, anonKey, serviceRoleKey };
+}
+
+/** Safe summary for admin diagnostics (no full secrets). */
+export function getSupabaseEnvSnapshot() {
+  const { publicUrl, anonKey, serviceRoleKey } = readSupabaseEnv();
+  let hostname: string | null = null;
+  try {
+    if (publicUrl) hostname = new URL(publicUrl).hostname;
+  } catch {
+    hostname = null;
+  }
+  return {
+    hasUrl: Boolean(publicUrl),
+    hostname,
+    hasAnonKey: Boolean(anonKey),
+    hasServiceRoleKey: Boolean(serviceRoleKey),
+    anonKeyPrefix: anonKey ? `${anonKey.slice(0, 14)}…` : null,
+    serviceKeyPrefix: serviceRoleKey ? `${serviceRoleKey.slice(0, 14)}…` : null,
+  };
 }
 
 export function getSupabaseConfigIssue() {

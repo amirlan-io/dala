@@ -10,10 +10,26 @@ import { Product } from "@/lib/types";
 import { FittingRoom } from "@/components/fitting/FittingRoom";
 import { normalizeProducts } from "@/lib/safe-products";
 
+function slugFromRouteParam(slug: string | string[] | undefined): string {
+  const raw = Array.isArray(slug) ? slug[0] : slug;
+  if (typeof raw !== "string" || raw.length === 0) return "";
+  try {
+    return decodeURIComponent(raw).normalize("NFC");
+  } catch {
+    return raw.normalize("NFC");
+  }
+}
+
 export default function ProductPage() {
-  const params = useParams<{ slug: string }>();
+  const params = useParams<{ slug?: string | string[] }>();
+  const routeSlug = useMemo(() => slugFromRouteParam(params.slug), [params.slug]);
   const [products, setProducts] = useState<Product[]>([]);
-  const product = useMemo(() => products.find((item) => item.slug === params.slug), [products, params.slug]);
+  const [loadState, setLoadState] = useState<"loading" | "done">("loading");
+  const product = useMemo(
+    () =>
+      products.find((item) => item.slug.normalize("NFC") === routeSlug),
+    [products, routeSlug],
+  );
   const addItem = useCartStore((s) => s.addItem);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [qty, setQty] = useState(1);
@@ -24,10 +40,19 @@ export default function ProductPage() {
     fetch("/api/products")
       .then((res) => res.json())
       .then((data) => setProducts(normalizeProducts(data)))
-      .catch(() => setProducts([]));
+      .catch(() => setProducts([]))
+      .finally(() => setLoadState("done"));
   }, []);
 
-  if (!product) return <section className="container-dala section-space">Product not found.</section>;
+  if (loadState === "loading") {
+    return (
+      <section className="container-dala section-space text-[var(--color-on-surface-2)]">Загрузка…</section>
+    );
+  }
+
+  if (!product) {
+    return <section className="container-dala section-space">Товар не найден.</section>;
+  }
 
   const size = selectedSize ?? product.sizes[0] ?? "M";
   const activeImage = selectedImage ?? product.images[0] ?? "";

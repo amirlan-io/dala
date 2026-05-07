@@ -8,6 +8,7 @@ import { useParams } from "next/navigation";
 import { Product } from "@/lib/types";
 import { FittingRoom } from "@/components/fitting/FittingRoom";
 import { ProductCompactShopModal, ProductGalleryShopModal } from "@/components/product/ProductShopModals";
+import { sizesForShopUi } from "@/lib/product-sizes";
 import { normalizeProducts } from "@/lib/safe-products";
 
 function slugFromRouteParam(slug: string | string[] | undefined): string {
@@ -89,7 +90,7 @@ export default function ProductPage() {
             {product.description}
           </p>
           <div className="mt-6 flex gap-2">
-            {product.sizes.map((item) => (
+            {sizesForShopUi(product).map((item) => (
               <button
                 key={item}
                 className={`border px-3 py-2 text-sm ${size === item ? "bg-black text-white" : "border-black"}`}

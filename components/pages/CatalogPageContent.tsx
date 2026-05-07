@@ -5,6 +5,7 @@ import { MoreHorizontal, Search, X } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { STANDARD_PRODUCT_SIZES } from "@/lib/product-sizes";
 import { Product } from "@/lib/types";
 import { useLanguage } from "@/lib/i18n";
 import { ProductCompactShopModal, ProductGalleryShopModal } from "@/components/product/ProductShopModals";
@@ -23,7 +24,7 @@ const FALLBACK_PRODUCTS: Product[] = [
     currency: "KZT",
     material: "Premium textile",
     description: "Демо товар для безопасного отображения каталога.",
-    sizes: ["M"],
+    sizes: [...STANDARD_PRODUCT_SIZES],
     images: ["/placeholder-product.svg"],
     featured: false,
     new: true,
@@ -469,7 +470,7 @@ export function CatalogPageContent({ initialIsAdmin = false }: { initialIsAdmin?
                     images: createForm.image ? [createForm.image] : ["/placeholder-product.svg"],
                     category: "KAMZOL",
                     material: "Premium textile",
-                    sizes: ["M"],
+                    sizes: [...STANDARD_PRODUCT_SIZES],
                     is_new: true,
                     new: true,
                     featured: false,

@@ -1,3 +1,4 @@
+import { STANDARD_PRODUCT_SIZES } from "@/lib/product-sizes";
 import { Product } from "@/lib/types";
 
 const ALLOWED_CATEGORIES = new Set<Product["category"]>([
@@ -34,7 +35,7 @@ export function normalizeProducts(payload: unknown): Product[] {
       currency: "KZT",
       material: typeof record.material === "string" && record.material ? record.material : "Premium Textile",
       description: typeof record.description === "string" ? record.description : "",
-      sizes: sizeList.length ? sizeList : ["M"],
+      sizes: sizeList.length ? sizeList : [...STANDARD_PRODUCT_SIZES],
       images: imageList.length ? imageList : ["/placeholder-product.svg"],
       fittingImage: typeof record.fittingImage === "string" ? record.fittingImage : undefined,
       featured: Boolean(record.featured),

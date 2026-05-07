@@ -216,7 +216,7 @@ export function CatalogPageContent({ initialIsAdmin = false }: { initialIsAdmin?
     setSort("NEW");
   };
 
-  const canManageCatalog = true;
+  const canManageCatalog = false;
   const productKey = `${query}|${category}|${sort}`;
   const categories = [
     { value: "ALL" as CategoryValue, label: t("catalogAll").toUpperCase() },

@@ -1,5 +1,12 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Setup
+
+1. Copy `.env.example` to `.env.local`
+2. Fill in your values
+3. Run `npm install`
+4. Run `npm run dev`
+
 ## Getting Started
 
 First, run the development server:

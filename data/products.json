@@ -1,0 +1,32 @@
+[
+  {
+    "id": "1",
+    "slug": "jacket-blue",
+    "name": "Куртка синяя",
+    "category": "ВЕРХНЯЯ ОДЕЖДА",
+    "price": 185000,
+    "currency": "KZT",
+    "material": "Стёганый хлопок с вышивкой",
+    "description": "Лёгкая стёганая куртка с национальным казахским орнаментом. Ручная вышивка, Premium хлопок.",
+    "sizes": ["XS", "S", "M", "L", "XL"],
+    "images": ["/uploads/jacket-blue.png"],
+    "featured": true,
+    "new": true,
+    "visible": true
+  },
+  {
+    "id": "2",
+    "slug": "jacket-green",
+    "name": "Куртка хаки",
+    "category": "ВЕРХНЯЯ ОДЕЖДА",
+    "price": 220000,
+    "currency": "KZT",
+    "material": "Шерсть с казахским орнаментом",
+    "description": "Куртка-бомбер из плотной шерсти с геометрическим казахским узором в технике аппликации. Премиальное исполнение.",
+    "sizes": ["S", "M", "L", "XL", "XXL"],
+    "images": ["/uploads/jacket-green.png"],
+    "featured": true,
+    "new": true,
+    "visible": true
+  }
+]

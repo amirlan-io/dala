@@ -1,0 +1,20 @@
+[
+  {
+    "id": "example-1",
+    "name": "DALA Example Dress",
+    "slug": "dala-example-dress",
+    "price": 89000,
+    "currency": "KZT",
+    "images": [
+      "/placeholder-product.svg"
+    ],
+    "sizes": [
+      "XS",
+      "S",
+      "M"
+    ],
+    "featured": false,
+    "new": true,
+    "visible": true
+  }
+]

@@ -1,26 +1,111 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --color-surface: #faf7f2;
+  --color-surface-low: #f5f0e8;
+  --color-surface-mid: #f0e8dc;
+  --color-surface-high: #ebe1d2;
+  --color-on-surface: #2c2218;
+  --color-on-surface-2: #5c4b3b;
+  --color-primary: #000000;
+  --color-on-primary: #ffffff;
+  --color-gold: #a08060;
+  --color-gold-light: #c8b89a;
+  --color-outline: #c8b89a;
+  --color-outline-var: #d9cebe;
+  --divider: rgba(200, 184, 154, 0.75);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-serif: var(--font-noto-serif);
+  --font-sans: var(--font-manrope);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--color-surface);
+  color: var(--color-on-surface);
+  font-family: var(--font-manrope), sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.container-dala {
+  width: min(100%, 1440px);
+  margin-inline: auto;
+  padding-inline: clamp(20px, 6vw, 48px);
+}
+
+.gold-label {
+  color: var(--color-gold);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.section-space {
+  padding-block: clamp(80px, 8vw, 120px);
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  border: 1px solid var(--color-primary);
+}
+
+.btn-primary:hover {
+  opacity: 0.92;
+}
+
+.btn-ghost {
+  border: 1px solid var(--color-primary);
+}
+
+.whatsapp-fab {
+  animation: whatsapp-pulse 2s ease-out infinite;
+}
+
+.whatsapp-fab::before {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: 9999px;
+  border: 2px solid rgba(37, 211, 102, 0.5);
+  animation: whatsapp-ring 2s ease-out infinite;
+}
+
+@keyframes whatsapp-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@keyframes whatsapp-ring {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.8;
+  }
+  70% {
+    transform: scale(1.2);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.2);
+    opacity: 0;
+  }
 }
+

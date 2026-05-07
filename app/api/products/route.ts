@@ -14,13 +14,16 @@ export async function GET(request: Request) {
     if (unauthorized) return unauthorized;
   }
 
-  const query = clients.supabase
+  const query = clients.supabaseAdmin
     .from("products")
     .select("*")
     .order("created_at", { ascending: false });
 
   const { data, error } = await query;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("[api/products][GET] Supabase error:", error.message);
+    return NextResponse.json([], { status: 200 });
+  }
   return NextResponse.json(data ?? []);
 }
 

@@ -9,6 +9,13 @@ export const metadata: Metadata = {
 };
 
 export default async function CatalogPage() {
-  const session = await getServerSession(authOptions);
-  return <CatalogPageContent initialIsAdmin={Boolean(session)} />;
+  let initialIsAdmin = false;
+  try {
+    const session = await getServerSession(authOptions);
+    initialIsAdmin = Boolean(session);
+  } catch {
+    initialIsAdmin = false;
+  }
+
+  return <CatalogPageContent initialIsAdmin={initialIsAdmin} />;
 }

@@ -15,10 +15,6 @@ const withPWA = withPWAInit({
 });
 
 const nextConfig: NextConfig = {
-  devIndicators: {
-    buildActivity: false,
-    appIsrStatus: false,
-  },
   images: {
     remotePatterns: [],
   },

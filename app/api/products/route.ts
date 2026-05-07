@@ -47,13 +47,23 @@ export async function POST(request: Request) {
 
   const payload = sanitizePayload(await request.json()) as Record<string, unknown>;
   const slug = toSlug(payload.slug ?? payload.name);
+  const insertPayload = {
+    slug,
+    name: String(payload.name ?? "").trim(),
+    description: String(payload.description ?? "").trim(),
+    price: Number(payload.price ?? 0),
+    category: String(payload.category ?? "ACCESSORIES"),
+    images: Array.isArray(payload.images) ? payload.images : [],
+    is_new: Boolean(payload.is_new ?? payload.new ?? false),
+  };
+
+  if (!insertPayload.name || !insertPayload.category || !Number.isFinite(insertPayload.price) || insertPayload.price <= 0) {
+    return NextResponse.json({ error: "Invalid product payload" }, { status: 400 });
+  }
+
   const { data, error } = await clients.supabaseAdmin
     .from("products")
-    .insert({
-      ...payload,
-      slug,
-      is_new: payload.is_new ?? payload.new ?? false,
-    })
+    .insert(insertPayload)
     .select("*")
     .single();
 

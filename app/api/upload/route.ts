@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import path from "path";
+import { promises as fs } from "fs";
 import { requireAdminSession } from "@/lib/admin-api";
 import { getSupabaseClients } from "@/lib/supabase";
 
@@ -9,7 +11,6 @@ export async function POST(request: Request) {
   const unauthorized = await requireAdminSession();
   if (unauthorized) return unauthorized;
   const clients = getSupabaseClients();
-  if (!clients) return NextResponse.json({ error: "Supabase env is not configured" }, { status: 500 });
 
   const form = await request.formData();
   const file = form.get("file");
@@ -30,15 +31,28 @@ export async function POST(request: Request) {
   const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, "-").toLowerCase();
   const fileName = `${Date.now()}-${filePrefix ? `${filePrefix}-` : ""}${sanitizedName}`;
 
-  const { error } = await clients.supabaseAdmin.storage
-    .from("products")
-    .upload(fileName, file, { contentType: file.type, upsert: false });
+  if (clients) {
+    const { error } = await clients.supabaseAdmin.storage
+      .from("products")
+      .upload(fileName, file, { contentType: file.type, upsert: false });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (!error) {
+      const {
+        data: { publicUrl },
+      } = clients.supabaseAdmin.storage.from("products").getPublicUrl(fileName);
 
-  const {
-    data: { publicUrl },
-  } = clients.supabaseAdmin.storage.from("products").getPublicUrl(fileName);
+      return NextResponse.json({ url: publicUrl });
+    }
 
-  return NextResponse.json({ url: publicUrl });
+    console.error("[api/upload] Supabase upload failed, fallback to local:", error.message);
+  } else {
+    console.error("[api/upload] Supabase env not configured, fallback to local upload");
+  }
+
+  // Fallback: local upload keeps admin flow working even if Supabase is unavailable.
+  const bytes = Buffer.from(await file.arrayBuffer());
+  const uploadDir = path.join(process.cwd(), "public", "uploads", "products");
+  await fs.mkdir(uploadDir, { recursive: true });
+  await fs.writeFile(path.join(uploadDir, fileName), bytes);
+  return NextResponse.json({ url: `/uploads/products/${fileName}` });
 }

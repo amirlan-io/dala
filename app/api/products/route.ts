@@ -89,9 +89,8 @@ export async function POST(request: Request) {
 
     if (error) return NextResponse.json({ error: error.message, code: error.code }, { status: 500 });
     return NextResponse.json(data, { status: 201 });
-  } catch (error) {
-    console.error("[api/products][POST] unhandled error:", error);
-    const message = error instanceof Error ? error.message : String(error);
-    return NextResponse.json({ error: message || "Products create internal error" }, { status: 500 });
+  } catch (err) {
+    console.error("[api/products][POST] unhandled error:", err);
+    return NextResponse.json({ error: String(err) }, { status: 500 });
   }
 }

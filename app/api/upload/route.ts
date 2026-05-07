@@ -121,8 +121,8 @@ export async function POST(request: Request) {
     await fs.mkdir(uploadDir, { recursive: true });
     await fs.writeFile(path.join(uploadDir, fileName), bytes);
     return NextResponse.json({ url: `/uploads/products/${fileName}` });
-  } catch (error) {
-    console.error("[api/upload] unhandled error:", error);
-    return NextResponse.json({ error: "Upload internal error" }, { status: 500 });
+  } catch (err) {
+    console.error("[api/upload] unhandled error:", err);
+    return NextResponse.json({ error: String(err) }, { status: 500 });
   }
 }

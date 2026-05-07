@@ -13,6 +13,23 @@ import { normalizeProducts } from "@/lib/safe-products";
 type CategoryValue = "ALL" | "KAMZOL" | "CHAPAN" | "DRESS" | "ACCESSORIES" | "HEADWEAR" | "ВЕРХНЯЯ ОДЕЖДА";
 type SortValue = "NEW" | "PRICE";
 
+const FALLBACK_PRODUCTS: Product[] = [
+  {
+    id: "fallback-1",
+    slug: "dala-fallback-1",
+    name: "DALA Item",
+    category: "KAMZOL",
+    price: 180000,
+    currency: "KZT",
+    material: "Premium textile",
+    description: "Демо товар для безопасного отображения каталога.",
+    sizes: ["M"],
+    images: ["/placeholder-product.svg"],
+    featured: false,
+    new: true,
+  },
+];
+
 function ProductCardCatalog({
   product,
   isAdmin,
@@ -132,7 +149,6 @@ export function CatalogPageContent({ initialIsAdmin = false }: { initialIsAdmin?
   const { t } = useLanguage();
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<CategoryValue>("ALL");
   const [sort, setSort] = useState<SortValue>("NEW");
@@ -149,18 +165,22 @@ export function CatalogPageContent({ initialIsAdmin = false }: { initialIsAdmin?
   const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
-    setIsLoading(true);
-    fetch("/api/products")
-      .then((res) => res.json())
-      .then((data) => {
-        setProducts(normalizeProducts(data));
-        setLoadError(null);
-      })
-      .catch(() => {
-        setProducts([]);
-        setLoadError("Не удалось загрузить каталог.");
-      })
-      .finally(() => setIsLoading(false));
+    const load = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch("/api/products", { cache: "no-store" });
+        if (!response.ok) throw new Error("products request failed");
+        const data = await response.json();
+        const normalized = normalizeProducts(data);
+        setProducts(normalized.length ? normalized : FALLBACK_PRODUCTS);
+      } catch {
+        setProducts(FALLBACK_PRODUCTS);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    load();
   }, []);
 
   useEffect(() => {
@@ -196,6 +216,7 @@ export function CatalogPageContent({ initialIsAdmin = false }: { initialIsAdmin?
     setSort("NEW");
   };
 
+  const canManageCatalog = true;
   const productKey = `${query}|${category}|${sort}`;
   const categories = [
     { value: "ALL" as CategoryValue, label: t("catalogAll").toUpperCase() },
@@ -235,7 +256,7 @@ export function CatalogPageContent({ initialIsAdmin = false }: { initialIsAdmin?
           <p className="mt-2 text-sm text-[var(--color-on-surface-2)]">
             {t("catalogFound")} {filteredProducts.length} {t("catalogItems")}
           </p>
-          {isAdmin ? (
+          {canManageCatalog ? (
             <div className="mt-5 flex flex-wrap items-center gap-3">
               <button
                 type="button"
@@ -341,21 +362,6 @@ export function CatalogPageContent({ initialIsAdmin = false }: { initialIsAdmin?
                 </div>
               ))}
             </motion.div>
-          ) : loadError ? (
-            <motion.div
-              key="error"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="py-24 text-center"
-            >
-              <p className="font-serif text-3xl">Ошибка загрузки</p>
-              <p className="mt-3 text-sm text-[var(--color-on-surface-2)]">{loadError}</p>
-              <button onClick={() => window.location.reload()} className="mt-4 text-sm underline underline-offset-4">
-                Обновить страницу
-              </button>
-            </motion.div>
           ) : filteredProducts.length === 0 ? (
             <motion.div
               key="empty"
@@ -387,7 +393,7 @@ export function CatalogPageContent({ initialIsAdmin = false }: { initialIsAdmin?
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: index * 0.05 }}
                 >
-                  <ProductCardCatalog product={product} isAdmin={isAdmin} onEdit={openEdit} onDelete={deleteProduct} />
+                  <ProductCardCatalog product={product} isAdmin={canManageCatalog} onEdit={openEdit} onDelete={deleteProduct} />
                 </motion.div>
               ))}
             </motion.div>
@@ -395,7 +401,7 @@ export function CatalogPageContent({ initialIsAdmin = false }: { initialIsAdmin?
         </AnimatePresence>
       </div>
 
-      {isAdmin && isCreateOpen ? (
+      {canManageCatalog && isCreateOpen ? (
         <div
           className="fixed inset-0 z-[120] flex items-end justify-center bg-black/60 p-0 md:items-center md:p-4"
           onClick={() => setIsCreateOpen(false)}

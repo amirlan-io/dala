@@ -4,8 +4,10 @@ import { requireAdminSession } from "@/lib/admin-api";
 import path from "path";
 import { promises as fs } from "fs";
 import { sanitizePayload } from "@/lib/sanitize";
+import { PRODUCTS as FALLBACK_PRODUCTS } from "@/lib/data";
 
 const PRODUCTS_PATH = "data/products.json";
+const PRODUCTS_EXAMPLE_PATH = "data/products.example.json";
 type ProductRecord = {
   id: string;
   name: string;
@@ -13,8 +15,18 @@ type ProductRecord = {
   [key: string]: unknown;
 };
 
+async function loadProducts(): Promise<ProductRecord[]> {
+  const stored = await readJsonFile<ProductRecord[]>(PRODUCTS_PATH, []);
+  if (stored.length > 0) return stored;
+
+  const example = await readJsonFile<ProductRecord[]>(PRODUCTS_EXAMPLE_PATH, []);
+  if (example.length > 0) return example;
+
+  return FALLBACK_PRODUCTS.map((item) => ({ ...item, visible: true }));
+}
+
 export async function GET(request: Request) {
-  const products = await readJsonFile<ProductRecord[]>(PRODUCTS_PATH, []);
+  const products = await loadProducts();
   const { searchParams } = new URL(request.url);
   const includeHidden = searchParams.get("includeHidden") === "true";
 
@@ -32,7 +44,7 @@ export async function POST(request: Request) {
   if (unauthorized) return unauthorized;
 
   const payload = sanitizePayload(await request.json());
-  const products = await readJsonFile<ProductRecord[]>(PRODUCTS_PATH, []);
+  const products = await loadProducts();
 
   const slug = String(payload.name ?? "")
     .toLowerCase()
@@ -61,7 +73,7 @@ export async function PUT(request: Request) {
   if (unauthorized) return unauthorized;
 
   const payload = sanitizePayload(await request.json());
-  const products = await readJsonFile<ProductRecord[]>(PRODUCTS_PATH, []);
+  const products = await loadProducts();
   const updated = products.map((product) =>
     product.id === payload.id
       ? {
@@ -88,7 +100,7 @@ export async function DELETE(request: Request) {
   const id = searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
-  const products = await readJsonFile<ProductRecord[]>(PRODUCTS_PATH, []);
+  const products = await loadProducts();
   const productToDelete = products.find((item) => item.id === id);
   if (productToDelete?.images && Array.isArray(productToDelete.images)) {
     await Promise.all(

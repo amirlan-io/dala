@@ -3,6 +3,18 @@ import { requireAdminSession } from "@/lib/admin-api";
 import { sanitizePayload } from "@/lib/sanitize";
 import { getSupabaseClients } from "@/lib/supabase";
 
+function toSlug(value: unknown) {
+  const source = String(value ?? "")
+    .trim()
+    .toLowerCase();
+  const slug = source
+    .replace(/[^\p{L}\p{N}\s-]/gu, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+  return slug || `product-${Date.now()}`;
+}
+
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const unauthorized = await requireAdminSession();
   if (unauthorized) return unauthorized;
@@ -11,11 +23,13 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
   const { id } = await params;
   const payload = sanitizePayload(await request.json()) as Record<string, unknown>;
+  const slug = payload.slug ? toSlug(payload.slug) : payload.name ? toSlug(payload.name) : undefined;
 
   const { data, error } = await clients.supabaseAdmin
     .from("products")
     .update({
       ...payload,
+      ...(slug ? { slug } : {}),
       is_new: payload.is_new ?? payload.new ?? false,
     })
     .eq("id", id)

@@ -501,8 +501,22 @@ export function CatalogPageContent({ initialIsAdmin = false }: { initialIsAdmin?
                   }}
                 />
                 {localImagePreview || createForm.image ? (
-                  <div className="mt-3">
+                  <div className="relative mt-3 inline-block">
                     <img src={localImagePreview || createForm.image} alt="" className="h-28 w-24 rounded-md object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCreateForm((prev) => ({ ...prev, image: "" }));
+                        setLocalImagePreview((prev) => {
+                          if (prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+                          return "";
+                        });
+                      }}
+                      className="absolute -right-2 -top-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-black text-white"
+                      aria-label="Удалить выбранное фото"
+                    >
+                      <X size={12} />
+                    </button>
                   </div>
                 ) : null}
               </div>

@@ -1,4 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
+import { createResilientServerFetch } from "@/lib/supabase-server-fetch";
+
+const resilientFetch = createResilientServerFetch();
 
 function normalizeEnv(value: string | undefined) {
   if (!value) return "";
@@ -39,6 +42,13 @@ export function getSupabaseConfigIssue() {
   return null;
 }
 
+/** URL + keys for server-only fallbacks (e.g. direct Storage REST upload). */
+export function getSupabaseConnectionParams(): null | { url: string; serviceRoleKey: string } {
+  if (getSupabaseConfigIssue()) return null;
+  const { publicUrl, serviceRoleKey } = readSupabaseEnv();
+  return { url: publicUrl, serviceRoleKey };
+}
+
 export function getSupabaseClients() {
   const issue = getSupabaseConfigIssue();
   if (issue) {
@@ -52,9 +62,12 @@ export function getSupabaseClients() {
   const verifiedServiceRoleKey = supabaseServiceRoleKey as string;
 
   try {
-    const supabase = createClient(verifiedUrl, verifiedAnonKey);
+    const supabase = createClient(verifiedUrl, verifiedAnonKey, {
+      global: { fetch: resilientFetch },
+    });
     const supabaseAdmin = createClient(verifiedUrl, verifiedServiceRoleKey, {
       auth: { persistSession: false },
+      global: { fetch: resilientFetch },
     });
 
     return { supabase, supabaseAdmin };

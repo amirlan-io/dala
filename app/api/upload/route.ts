@@ -2,10 +2,43 @@ import { NextResponse } from "next/server";
 import path from "path";
 import { promises as fs } from "fs";
 import { requireAdminSession } from "@/lib/admin-api";
-import { getSupabaseClients, getSupabaseConfigIssue } from "@/lib/supabase";
+import { getSupabaseClients, getSupabaseConfigIssue, getSupabaseConnectionParams } from "@/lib/supabase";
+import { createResilientServerFetch } from "@/lib/supabase-server-fetch";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 const MAX_SIZE = 5 * 1024 * 1024;
+const restFetch = createResilientServerFetch(3);
+
+/** Fallback when supabase-js storage uses a code path that still fails on some Node/Vercel stacks. */
+async function uploadViaStorageRest(args: {
+  baseUrl: string;
+  serviceRoleKey: string;
+  bucket: string;
+  objectPath: string;
+  body: Buffer;
+  contentType: string;
+}) {
+  const { baseUrl, serviceRoleKey, bucket, objectPath, body, contentType } = args;
+  const root = baseUrl.replace(/\/$/, "");
+  const url = `${root}/storage/v1/object/${encodeURIComponent(bucket)}/${objectPath
+    .split("/")
+    .filter(Boolean)
+    .map(encodeURIComponent)
+    .join("/")}`;
+  const res = await restFetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${serviceRoleKey}`,
+      apikey: serviceRoleKey,
+      "Content-Type": contentType,
+    },
+    body: new Uint8Array(body),
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    throw new Error(`REST ${res.status}: ${text.slice(0, 400)}`);
+  }
+}
 
 export async function POST(request: Request) {
   try {
@@ -47,6 +80,28 @@ export async function POST(request: Request) {
       }
 
       console.error("[api/upload] Supabase upload failed:", error.message);
+      const shouldTryRest = /fetch failed|network|ECONNRESET|ETIMEDOUT|ENOTFOUND|CERT/i.test(error.message);
+
+      if (shouldTryRest) {
+        const params = getSupabaseConnectionParams();
+        if (params) {
+          try {
+            await uploadViaStorageRest({
+              baseUrl: params.url,
+              serviceRoleKey: params.serviceRoleKey,
+              bucket: "products",
+              objectPath: fileName,
+              body: fileBuffer,
+              contentType: file.type,
+            });
+            const publicUrl = `${params.url.replace(/\/$/, "")}/storage/v1/object/public/products/${fileName}`;
+            return NextResponse.json({ url: publicUrl });
+          } catch (restError) {
+            console.error("[api/upload] REST fallback failed:", restError);
+          }
+        }
+      }
+
       return NextResponse.json({ error: `Supabase upload failed: ${error.message}` }, { status: 500 });
     }
 

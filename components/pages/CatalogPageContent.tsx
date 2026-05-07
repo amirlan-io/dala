@@ -500,7 +500,14 @@ export function CatalogPageContent({ initialIsAdmin = false }: { initialIsAdmin?
                     body.append("folder", "products");
                     body.append("filePrefix", "catalog");
                     const response = await fetch("/api/upload", { method: "POST", body });
-                    const data = await response.json();
+                    const raw = await response.text();
+                    const data = (() => {
+                      try {
+                        return raw ? JSON.parse(raw) : null;
+                      } catch {
+                        return null;
+                      }
+                    })();
                     if (data.url) {
                       setCreateForm((prev) => ({ ...prev, image: data.url }));
                     } else {

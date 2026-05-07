@@ -4,6 +4,7 @@ import { sanitizePayload } from "@/lib/sanitize";
 import { getSupabaseClients } from "@/lib/supabase";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 function toSlug(value: unknown) {
   const source = String(value ?? "")

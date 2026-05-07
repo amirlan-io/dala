@@ -5,6 +5,7 @@ import { getSupabaseClients, getSupabaseConfigIssue } from "@/lib/supabase";
 
 /** Supabase stack uses `node:dns` — Edge runtime would crash and return HTML __next_error__ instead of JSON. */
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 function toSlug(value: unknown) {
   const source = String(value ?? "")

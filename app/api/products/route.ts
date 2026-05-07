@@ -1,11 +1,18 @@
 import { NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/admin-api";
-import { sanitizePayload } from "@/lib/sanitize";
 import { getSupabaseClients, getSupabaseConfigIssue } from "@/lib/supabase";
 
 /** Supabase stack uses `node:dns` — Edge runtime would crash and return HTML __next_error__ instead of JSON. */
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+/** Avoid @/lib/sanitize here — isomorphic-dompurify pulls jsdom → html-encoding-sniffer, which breaks on Vercel (CJS require of ESM). */
+function jsonBodyAsRecord(value: unknown): Record<string, unknown> {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+  return {};
+}
 
 function toSlug(value: unknown) {
   const source = String(value ?? "")
@@ -55,7 +62,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const payload = sanitizePayload(await request.json()) as Record<string, unknown>;
+    let payload: Record<string, unknown>;
+    try {
+      payload = jsonBodyAsRecord(await request.json());
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
     const slug = toSlug(payload.slug ?? payload.name);
     const priceNum = Number(payload.price ?? 0);
     const insertPayload = {

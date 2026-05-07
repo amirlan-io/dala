@@ -458,7 +458,15 @@ export function CatalogPageContent({ initialIsAdmin = false }: { initialIsAdmin?
                 });
 
                 if (!response.ok) {
-                  setCreateMessage({ type: "error", text: "Ошибка сохранения. Попробуй снова." });
+                  const errorPayload = await response.json().catch(() => null);
+                  const errorText = errorPayload?.error
+                    ? `Ошибка сохранения: ${String(errorPayload.error)}`
+                    : `Ошибка сохранения (HTTP ${response.status}).`;
+                  console.error("[Admin Quick Create] save failed:", {
+                    status: response.status,
+                    errorPayload,
+                  });
+                  setCreateMessage({ type: "error", text: errorText });
                   setIsSaving(false);
                   return;
                 }
@@ -496,7 +504,11 @@ export function CatalogPageContent({ initialIsAdmin = false }: { initialIsAdmin?
                     if (data.url) {
                       setCreateForm((prev) => ({ ...prev, image: data.url }));
                     } else {
-                      setCreateMessage({ type: "error", text: "Не удалось загрузить фото." });
+                      console.error("[Admin Quick Create] upload failed:", data);
+                      setCreateMessage({
+                        type: "error",
+                        text: data?.error ? `Не удалось загрузить фото: ${String(data.error)}` : "Не удалось загрузить фото.",
+                      });
                     }
                   }}
                 />

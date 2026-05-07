@@ -8,6 +8,7 @@ import { useParams } from "next/navigation";
 import { useCartStore } from "@/lib/cart-store";
 import { Product } from "@/lib/types";
 import { FittingRoom } from "@/components/fitting/FittingRoom";
+import { normalizeProducts } from "@/lib/safe-products";
 
 export default function ProductPage() {
   const params = useParams<{ slug: string }>();
@@ -22,7 +23,7 @@ export default function ProductPage() {
   useEffect(() => {
     fetch("/api/products")
       .then((res) => res.json())
-      .then((data) => setProducts(data))
+      .then((data) => setProducts(normalizeProducts(data)))
       .catch(() => setProducts([]));
   }, []);
 

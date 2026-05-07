@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useCartStore } from "@/lib/cart-store";
 import { Product } from "@/lib/types";
 import { useLanguage } from "@/lib/i18n";
+import { normalizeProducts } from "@/lib/safe-products";
 
 type CategoryValue = "ALL" | "KAMZOL" | "CHAPAN" | "DRESS" | "ACCESSORIES" | "HEADWEAR" | "ВЕРХНЯЯ ОДЕЖДА";
 type SortValue = "NEW" | "PRICE";
@@ -148,7 +149,7 @@ export function CatalogPageContent({ initialIsAdmin = false }: { initialIsAdmin?
   useEffect(() => {
     fetch("/api/products")
       .then((res) => res.json())
-      .then((data) => setProducts(data))
+      .then((data) => setProducts(normalizeProducts(data)))
       .catch(() => setProducts([]));
   }, []);
 
@@ -212,7 +213,7 @@ export function CatalogPageContent({ initialIsAdmin = false }: { initialIsAdmin?
     const response = await fetch(`/api/products?id=${id}`, { method: "DELETE" });
     if (!response.ok) return;
     const updated = await fetch("/api/products").then((res) => res.json());
-    setProducts(updated);
+    setProducts(normalizeProducts(updated));
   };
 
   return (
@@ -415,7 +416,7 @@ export function CatalogPageContent({ initialIsAdmin = false }: { initialIsAdmin?
                 setEditingId(null);
                 await fetch("/api/products")
                   .then((res) => res.json())
-                  .then((data) => setProducts(data))
+                  .then((data) => setProducts(normalizeProducts(data)))
                   .catch(() => setProducts([]));
                 setIsSaving(false);
               }}

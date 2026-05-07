@@ -7,6 +7,7 @@ import { HeroTextBlock } from "@/components/home/HeroTextBlock";
 import { HeroSlideshow } from "@/components/home/HeroSlideshow";
 import { StoryBlock } from "@/components/home/StoryBlock";
 import { FeaturedCatalog } from "@/components/home/FeaturedCatalog";
+import { normalizeProducts } from "@/lib/safe-products";
 
 type HeroContent = {
   title: string;
@@ -86,7 +87,7 @@ export function HomePageContent({
   useEffect(() => {
     fetch("/api/products")
       .then((res) => res.json())
-      .then((data) => setProducts(data))
+      .then((data) => setProducts(normalizeProducts(data)))
       .catch(() => setProducts([]));
   }, []);
 

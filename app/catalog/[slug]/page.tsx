@@ -5,9 +5,9 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { useCartStore } from "@/lib/cart-store";
 import { Product } from "@/lib/types";
 import { FittingRoom } from "@/components/fitting/FittingRoom";
+import { ProductCompactShopModal, ProductGalleryShopModal } from "@/components/product/ProductShopModals";
 import { normalizeProducts } from "@/lib/safe-products";
 
 function slugFromRouteParam(slug: string | string[] | undefined): string {
@@ -30,11 +30,12 @@ export default function ProductPage() {
       products.find((item) => item.slug.normalize("NFC") === routeSlug),
     [products, routeSlug],
   );
-  const addItem = useCartStore((s) => s.addItem);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [qty, setQty] = useState(1);
   const [showToast, setShowToast] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [compactShopOpen, setCompactShopOpen] = useState(false);
+  const [galleryShopOpen, setGalleryShopOpen] = useState(false);
 
   useEffect(() => {
     fetch("/api/products")
@@ -57,6 +58,11 @@ export default function ProductPage() {
   const size = selectedSize ?? product.sizes[0] ?? "M";
   const activeImage = selectedImage ?? product.images[0] ?? "";
 
+  const toastAfterAdd = () => {
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 2000);
+  };
+
   const fittingCandidates = products.filter(
     (item) => item.category === product.category && item.fittingImage,
   );
@@ -67,9 +73,14 @@ export default function ProductPage() {
   return (
     <section className="container-dala section-space space-y-12">
       <div className="grid gap-10 lg:grid-cols-[1.5fr_1fr]">
-        <div className="relative aspect-[3/4] bg-[var(--color-surface-mid)]">
+        <button
+          type="button"
+          className="relative aspect-[3/4] w-full cursor-pointer bg-[var(--color-surface-mid)] text-left"
+          onClick={() => setCompactShopOpen(true)}
+          aria-label="Быстрый заказ: размер и в корзину"
+        >
           <Image src={activeImage || product.images[0]} alt={product.name} fill className="object-cover" />
-        </div>
+        </button>
         <div>
           <p className="gold-label">{product.category}</p>
           <h1 className="mt-2 font-serif text-4xl">{product.name}</h1>
@@ -95,18 +106,8 @@ export default function ProductPage() {
           </div>
           <button
             className="btn-primary mt-8 w-full px-8 py-4 text-sm uppercase tracking-[0.1em]"
-            onClick={() => {
-              addItem({
-                productId: product.id,
-                name: product.name,
-                image: product.images[0],
-                size,
-                price: product.price,
-                quantity: qty,
-              });
-              setShowToast(true);
-              setTimeout(() => setShowToast(false), 2000);
-            }}
+            type="button"
+            onClick={() => setGalleryShopOpen(true)}
           >
             ДОБАВИТЬ В КОРЗИНУ
           </button>
@@ -120,6 +121,23 @@ export default function ProductPage() {
           </Link>
         </div>
       </div>
+
+      <ProductCompactShopModal
+        product={product}
+        open={compactShopOpen}
+        onClose={() => setCompactShopOpen(false)}
+        initialSize={size}
+        initialQty={qty}
+        onAdded={toastAfterAdd}
+      />
+      <ProductGalleryShopModal
+        product={product}
+        open={galleryShopOpen}
+        onClose={() => setGalleryShopOpen(false)}
+        initialSize={size}
+        initialQty={qty}
+        onAdded={toastAfterAdd}
+      />
 
       {product.images.length > 1 ? (
         <div className="flex gap-3 overflow-x-auto pb-1">

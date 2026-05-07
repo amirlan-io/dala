@@ -5,9 +5,9 @@ import { MoreHorizontal, Search, X } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useCartStore } from "@/lib/cart-store";
 import { Product } from "@/lib/types";
 import { useLanguage } from "@/lib/i18n";
+import { ProductCompactShopModal, ProductGalleryShopModal } from "@/components/product/ProductShopModals";
 import { normalizeProducts } from "@/lib/safe-products";
 
 type CategoryValue = "ALL" | "KAMZOL" | "CHAPAN" | "DRESS" | "ACCESSORIES" | "HEADWEAR" | "ВЕРХНЯЯ ОДЕЖДА";
@@ -42,10 +42,10 @@ function ProductCardCatalog({
   onDelete: (id: string) => void;
 }) {
   const router = useRouter();
-  const addItem = useCartStore((state) => state.addItem);
   const [imageError, setImageError] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [selectedSize] = useState(product.sizes[0] ?? "M");
+  const [compactShopOpen, setCompactShopOpen] = useState(false);
+  const [galleryShopOpen, setGalleryShopOpen] = useState(false);
 
   return (
     <motion.article
@@ -54,12 +54,21 @@ function ProductCardCatalog({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 8 }}
       transition={{ duration: 0.3 }}
-      className="group cursor-pointer"
-      onClick={() => router.push(`/catalog/${product.slug}`)}
+      className="group"
     >
       <div className="relative aspect-[3/4] overflow-hidden bg-[#EFE7DD]">
+          <button
+            type="button"
+            className="absolute inset-0 z-10 cursor-pointer bg-transparent"
+            aria-label="Быстрый заказ: размер и корзина"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              setCompactShopOpen(true);
+            }}
+          />
           {isAdmin ? (
-            <div className="absolute right-2 top-2 z-20 md:right-3 md:top-3">
+            <div className="absolute right-2 top-2 z-30 md:right-3 md:top-3">
               <button
                 type="button"
                 className="rounded-full bg-white/95 p-2 text-zinc-700 shadow transition hover:bg-white"
@@ -108,39 +117,49 @@ function ProductCardCatalog({
               alt={`${product.name} DALA`}
               fill
               sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-              className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+              className="pointer-events-none object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
               onError={() => setImageError(true)}
             />
         ) : (
           <div className="h-full w-full bg-[#EFE7DD]" />
         )}
 
-          <div className="absolute bottom-4 left-4 right-4 hidden opacity-0 transition duration-300 group-hover:opacity-100 md:block">
+          <div className="absolute bottom-3 left-3 right-3 z-20 opacity-100 md:bottom-4 md:left-4 md:right-4 md:opacity-0 md:transition-opacity md:duration-300 md:group-hover:opacity-100">
             <button
               type="button"
               onClick={(event) => {
                 event.preventDefault();
                 event.stopPropagation();
-                addItem({
-                  productId: product.id,
-                  name: product.name,
-                  image: product.images[0],
-                  price: product.price,
-                  quantity: 1,
-                  size: selectedSize,
-                });
+                setGalleryShopOpen(true);
               }}
-              className="w-full border border-white bg-black/35 px-3 py-2 text-[10px] uppercase tracking-[0.12em] text-white backdrop-blur"
+              className="w-full border border-white bg-black/40 px-3 py-2.5 text-[10px] uppercase tracking-[0.12em] text-white backdrop-blur md:py-2"
             >
               В КОРЗИНУ
             </button>
           </div>
       </div>
-      <div className="py-3 text-left">
+      <div
+        className="cursor-pointer py-3 text-left"
+        onClick={(event) => {
+          event.stopPropagation();
+          router.push(`/catalog/${encodeURIComponent(product.slug)}`);
+        }}
+        role="link"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            router.push(`/catalog/${encodeURIComponent(product.slug)}`);
+          }
+        }}
+      >
         <h3 className="font-serif text-[16px] leading-tight">{product.name}</h3>
         <p className="mt-1 line-clamp-2 text-[11px] text-[var(--color-on-surface-2)]">{product.description}</p>
         <p className="mt-2 text-[15px]">{product.price.toLocaleString("ru-RU")} ₸</p>
       </div>
+
+      <ProductCompactShopModal product={product} open={compactShopOpen} onClose={() => setCompactShopOpen(false)} />
+      <ProductGalleryShopModal product={product} open={galleryShopOpen} onClose={() => setGalleryShopOpen(false)} />
     </motion.article>
   );
 }

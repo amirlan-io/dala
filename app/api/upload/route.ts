@@ -33,9 +33,10 @@ export async function POST(request: Request) {
     const fileName = `${Date.now()}-${filePrefix ? `${filePrefix}-` : ""}${sanitizedName}`;
 
     if (clients) {
+      const fileBuffer = Buffer.from(await file.arrayBuffer());
       const { error } = await clients.supabaseAdmin.storage
         .from("products")
-        .upload(fileName, file, { contentType: file.type, upsert: false });
+        .upload(fileName, fileBuffer, { contentType: file.type, upsert: false });
 
       if (!error) {
         const {

@@ -162,6 +162,7 @@ export function CatalogPageContent({ initialIsAdmin = false }: { initialIsAdmin?
     price: 0,
     image: "",
   });
+  const [localImagePreview, setLocalImagePreview] = useState<string>("");
   const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -237,6 +238,7 @@ export function CatalogPageContent({ initialIsAdmin = false }: { initialIsAdmin?
       image: product.images[0] ?? "",
     });
     setCreateMessage(null);
+    setLocalImagePreview(product.images[0] ?? "");
     setIsCreateOpen(true);
   };
 
@@ -263,6 +265,7 @@ export function CatalogPageContent({ initialIsAdmin = false }: { initialIsAdmin?
                 onClick={() => {
                   setEditingId(null);
                   setCreateForm({ name: "", description: "", price: 0, image: "" });
+                  setLocalImagePreview("");
                   setCreateMessage(null);
                   setIsCreateOpen(true);
                 }}
@@ -479,6 +482,11 @@ export function CatalogPageContent({ initialIsAdmin = false }: { initialIsAdmin?
                   onChange={async (event) => {
                     const file = event.target.files?.[0];
                     if (!file) return;
+                    const previewUrl = URL.createObjectURL(file);
+                    setLocalImagePreview((prev) => {
+                      if (prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+                      return previewUrl;
+                    });
                     const body = new FormData();
                     body.append("file", file);
                     body.append("folder", "products");
@@ -492,9 +500,9 @@ export function CatalogPageContent({ initialIsAdmin = false }: { initialIsAdmin?
                     }
                   }}
                 />
-                {createForm.image ? (
+                {localImagePreview || createForm.image ? (
                   <div className="mt-3">
-                    <img src={createForm.image} alt="" className="h-28 w-24 rounded-md object-cover" />
+                    <img src={localImagePreview || createForm.image} alt="" className="h-28 w-24 rounded-md object-cover" />
                   </div>
                 ) : null}
               </div>
@@ -556,6 +564,10 @@ export function CatalogPageContent({ initialIsAdmin = false }: { initialIsAdmin?
                     setIsCreateOpen(false);
                     setEditingId(null);
                     setCreateForm({ name: "", description: "", price: 0, image: "" });
+                    setLocalImagePreview((prev) => {
+                      if (prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+                      return "";
+                    });
                   }}
                   className="rounded-full border border-zinc-400 px-6 py-3 text-xs uppercase tracking-[0.16em] text-zinc-700 transition hover:bg-zinc-100"
                 >

@@ -19,16 +19,19 @@ function hasValidHttpUrl(value: string | undefined) {
 }
 
 function readSupabaseEnv() {
-  const publicUrl = normalizeEnv(process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL);
-  const anonKey = normalizeEnv(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY);
+  // Prefer server-only names first so Vercel injects them at runtime (NEXT_PUBLIC_* is build-inlined on client).
+  const publicUrl = normalizeEnv(process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL);
+  const anonKey = normalizeEnv(process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
   const serviceRoleKey = normalizeEnv(process.env.SUPABASE_SERVICE_ROLE_KEY);
   return { publicUrl, anonKey, serviceRoleKey };
 }
 
 export function getSupabaseConfigIssue() {
   const { publicUrl, anonKey, serviceRoleKey } = readSupabaseEnv();
-  if (!publicUrl) return "Missing NEXT_PUBLIC_SUPABASE_URL (or SUPABASE_URL)";
-  if (!hasValidHttpUrl(publicUrl)) return "Invalid NEXT_PUBLIC_SUPABASE_URL format";
+  if (!publicUrl) {
+    return "No Supabase URL in this deployment. In Vercel → Project that owns this domain → Settings → Environment Variables add SUPABASE_URL (or NEXT_PUBLIC_SUPABASE_URL) = https://…supabase.co for Production, Save, then Redeploy (Deployments → … → Redeploy).";
+  }
+  if (!hasValidHttpUrl(publicUrl)) return "Invalid Supabase URL format (must be https://…supabase.co)";
   if (!anonKey) return "Missing NEXT_PUBLIC_SUPABASE_ANON_KEY (or SUPABASE_ANON_KEY)";
   if (!serviceRoleKey) return "Missing SUPABASE_SERVICE_ROLE_KEY";
   const hasNonAsciiKeyChars = [anonKey, serviceRoleKey].some((key) => /[^\x20-\x7E]/.test(key));

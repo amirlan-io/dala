@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import path from "path";
 import { promises as fs } from "fs";
 import { requireAdminSession } from "@/lib/admin-api";
-import { getSupabaseClients } from "@/lib/supabase";
+import { getSupabaseClients, getSupabaseConfigIssue } from "@/lib/supabase";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 const MAX_SIZE = 5 * 1024 * 1024;
@@ -52,7 +52,10 @@ export async function POST(request: Request) {
 
     // Vercel filesystem is not reliable for persistent uploads.
     if (process.env.VERCEL) {
-      return NextResponse.json({ error: "Supabase storage is not configured on server" }, { status: 500 });
+      return NextResponse.json(
+        { error: `Supabase storage is not configured on server: ${getSupabaseConfigIssue() ?? "unknown issue"}` },
+        { status: 500 },
+      );
     }
 
     // Local dev fallback only.

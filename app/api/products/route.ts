@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/admin-api";
 import { sanitizePayload } from "@/lib/sanitize";
-import { getSupabaseClients } from "@/lib/supabase";
+import { getSupabaseClients, getSupabaseConfigIssue } from "@/lib/supabase";
 
 function toSlug(value: unknown) {
   const source = String(value ?? "")
@@ -44,7 +44,12 @@ export async function POST(request: Request) {
     const unauthorized = await requireAdminSession();
     if (unauthorized) return unauthorized;
     const clients = getSupabaseClients();
-    if (!clients) return NextResponse.json({ error: "Supabase env is not configured" }, { status: 500 });
+    if (!clients) {
+      return NextResponse.json(
+        { error: `Supabase env is not configured: ${getSupabaseConfigIssue() ?? "unknown issue"}` },
+        { status: 500 },
+      );
+    }
 
     const payload = sanitizePayload(await request.json()) as Record<string, unknown>;
     const slug = toSlug(payload.slug ?? payload.name);
